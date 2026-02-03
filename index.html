@@ -205,6 +205,83 @@
             padding: 20px;
             color: #666;
         }
+
+        .edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+
+        .edit-modal-content {
+            position: relative;
+            background: #2d2d2d;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+
+        .edit-modal-content h2 {
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .edit-form input,
+        .edit-form select {
+            padding: 10px;
+            border: 1px solid #444;
+            font-size: 14px;
+            background: #3a3a3a;
+            color: #e0e0e0;
+            width: 100%;
+        }
+
+        .edit-form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .save-btn {
+            padding: 10px 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .save-btn:hover {
+            background: #229954;
+        }
+
+        .cancel-btn {
+            padding: 10px 20px;
+            background: #666;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .cancel-btn:hover {
+            background: #555;
+        }
     </style>
 </head>
 <body>
@@ -262,13 +339,44 @@
         </table>
     </div>
 
+    <!-- Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-modal-content">
+            <h2>Eintrag bearbeiten</h2>
+            <div class="edit-form">
+                <input type="text" id="editTwitchName" placeholder="Twitch-Name">
+                <input type="text" id="editIngameName" placeholder="Ingame-Name">
+                <select id="editLevelMission">
+                    <option value="">Level Mission wählen...</option>
+                    <option value="Level 10">Level 10</option>
+                    <option value="Level 17">Level 17</option>
+                    <option value="Level 20">Level 20</option>
+                    <option value="Level 23">Level 23</option>
+                    <option value="Level 25">Level 25</option>
+                </select>
+                <select id="editPackMission">
+                    <option value="">Pack Mission wählen...</option>
+                    <option value="2$ Pack">2$ Pack</option>
+                    <option value="5$ Pack">5$ Pack</option>
+                    <option value="20$ Pack">20$ Pack</option>
+                </select>
+                <input type="text" id="editReward" placeholder="Belohnung">
+                <div class="edit-form-buttons">
+                    <button class="save-btn" id="saveEditBtn">Speichern</button>
+                    <button class="cancel-btn" id="cancelEditBtn">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://zraeikoehgcdqaaqwtot.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYWVpa29laGdjZHFhYXF3dG90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTg0NjksImV4cCI6MjA4NTYzNDQ2OX0.xGL-o0AHO6zAquu_yiSF78frqOtYOwVmvKaU2JF-oKc';
-        const ACCESS_PASSWORD = 'DoomsdayKoop';
+        const ACCESS_PASSWORD = 'NunoKooperation';
 
         let supabaseClient;
         let isLoggedIn = false;
+        let currentEditId = null;
 
         if (sessionStorage.getItem('loggedIn') === 'true') {
             showMainApp();
@@ -316,6 +424,8 @@
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('addBtn').addEventListener('click', addEntry);
             document.getElementById('exportBtn').addEventListener('click', exportToText);
+            document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+            document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
         }
 
         async function loadEntries() {
@@ -406,32 +516,76 @@
             }
         }
 
-        async function editEntry(id, twitchName, ingameName, mission, reward) {
-            const newTwitchName = prompt('Twitch-Name:', twitchName);
-            if (newTwitchName === null) return;
+        function editEntry(id, twitchName, ingameName, mission, reward) {
+            currentEditId = id;
             
-            const newIngameName = prompt('Ingame-Name:', ingameName);
-            if (newIngameName === null) return;
+            // Fill the form
+            document.getElementById('editTwitchName').value = twitchName || '';
+            document.getElementById('editIngameName').value = ingameName || '';
+            document.getElementById('editReward').value = reward || '';
             
-            const newMission = prompt('Mission:', mission);
-            if (newMission === null) return;
+            // Parse mission string to separate level and pack missions
+            if (mission) {
+                const missions = mission.split(', ');
+                missions.forEach(m => {
+                    if (m.includes('Level')) {
+                        document.getElementById('editLevelMission').value = m;
+                    } else if (m.includes('Pack')) {
+                        document.getElementById('editPackMission').value = m;
+                    }
+                });
+            } else {
+                document.getElementById('editLevelMission').value = '';
+                document.getElementById('editPackMission').value = '';
+            }
             
-            const newReward = prompt('Belohnung:', reward);
-            if (newReward === null) return;
+            // Show modal
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditId = null;
+        }
+
+        async function saveEdit() {
+            if (!currentEditId) return;
+
+            const twitchName = document.getElementById('editTwitchName').value.trim();
+            const ingameName = document.getElementById('editIngameName').value.trim();
+            const levelMission = document.getElementById('editLevelMission').value;
+            const packMission = document.getElementById('editPackMission').value;
+            const reward = document.getElementById('editReward').value.trim();
+
+            if (!twitchName || !ingameName || (!levelMission && !packMission) || !reward) {
+                alert('Bitte fülle Twitch-Name, Ingame-Name, mindestens eine Mission und Belohnung aus!');
+                return;
+            }
+
+            // Combine missions
+            let missionText = '';
+            if (levelMission && packMission) {
+                missionText = levelMission + ', ' + packMission;
+            } else if (levelMission) {
+                missionText = levelMission;
+            } else {
+                missionText = packMission;
+            }
 
             try {
                 const { error } = await supabaseClient
                     .from('missions')
                     .update({
-                        twitch_name: newTwitchName,
-                        ingame_name: newIngameName,
-                        mission: newMission,
-                        reward: newReward
+                        twitch_name: twitchName,
+                        ingame_name: ingameName,
+                        mission: missionText,
+                        reward: reward
                     })
-                    .eq('id', id);
+                    .eq('id', currentEditId);
 
                 if (error) throw error;
 
+                closeEditModal();
                 loadEntries();
             } catch (error) {
                 alert('Fehler beim Bearbeiten: ' + error.message);
