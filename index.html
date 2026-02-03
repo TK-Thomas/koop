@@ -102,10 +102,30 @@
         }
 
         .add-form {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             padding: 20px;
             background: #3a3a3a;
             border: 1px solid #444;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #3a3a3a;
+            border: 1px solid #444;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            font-size: 14px;
+            background: #2d2d2d;
+            color: #e0e0e0;
+        }
+
+        .search-bar input::placeholder {
+            color: #888;
         }
 
         .add-form input,
@@ -322,6 +342,10 @@
             <button class="add-btn" id="addBtn">Eintrag hinzufügen</button>
         </div>
 
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Suche nach Twitch-Name, Ingame-Name, Mission oder Belohnung...">
+        </div>
+
         <div class="loading" id="loading">Lade Daten...</div>
 
         <table id="dataTable" style="display: none;">
@@ -377,6 +401,7 @@
         let supabaseClient;
         let isLoggedIn = false;
         let currentEditId = null;
+        let allData = [];
 
         if (sessionStorage.getItem('loggedIn') === 'true') {
             showMainApp();
@@ -426,6 +451,7 @@
             document.getElementById('exportBtn').addEventListener('click', exportToText);
             document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
             document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+            document.getElementById('searchInput').addEventListener('input', filterTable);
         }
 
         async function loadEntries() {
@@ -443,28 +469,59 @@
                 loading.style.display = 'none';
                 table.style.display = 'table';
                 
-                const tbody = document.getElementById('tableBody');
-                tbody.innerHTML = '';
-
-                if (data && data.length > 0) {
-                    data.forEach(entry => {
-                        const row = tbody.insertRow();
-                        row.innerHTML = `
-                            <td>${entry.twitch_name || ''}</td>
-                            <td>${entry.ingame_name || ''}</td>
-                            <td>${entry.mission || ''}</td>
-                            <td>${entry.reward || ''}</td>
-                            <td>
-                                <button class="edit-btn" onclick="editEntry('${entry.id}', '${entry.twitch_name}', '${entry.ingame_name}', '${entry.mission}', '${entry.reward}')">Edit</button>
-                                <button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button>
-                            </td>
-                        `;
-                    });
-                }
+                allData = data || [];
+                renderTable(allData);
             } catch (error) {
                 loading.textContent = 'Fehler beim Laden: ' + error.message;
                 console.error('Load error:', error);
             }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (data && data.length > 0) {
+                data.forEach(entry => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${entry.twitch_name || ''}</td>
+                        <td>${entry.ingame_name || ''}</td>
+                        <td>${entry.mission || ''}</td>
+                        <td>${entry.reward || ''}</td>
+                        <td>
+                            <button class="edit-btn" onclick="editEntry('${entry.id}', '${entry.twitch_name}', '${entry.ingame_name}', '${entry.mission}', '${entry.reward}')">Edit</button>
+                            <button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button>
+                        </td>
+                    `;
+                });
+            } else {
+                const row = tbody.insertRow();
+                row.innerHTML = '<td colspan="5" style="text-align: center; color: #888;">Keine Einträge gefunden</td>';
+            }
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (!searchTerm) {
+                renderTable(allData);
+                return;
+            }
+
+            const filtered = allData.filter(entry => {
+                const twitchName = (entry.twitch_name || '').toLowerCase();
+                const ingameName = (entry.ingame_name || '').toLowerCase();
+                const mission = (entry.mission || '').toLowerCase();
+                const reward = (entry.reward || '').toLowerCase();
+                
+                return twitchName.includes(searchTerm) || 
+                       ingameName.includes(searchTerm) || 
+                       mission.includes(searchTerm) || 
+                       reward.includes(searchTerm);
+            });
+
+            renderTable(filtered);
         }
 
         async function addEntry() {
