@@ -14,20 +14,21 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #ffffff;
+            background: #1e1e1e;
             padding: 20px;
+            color: #e0e0e0;
         }
 
         .login-container {
             max-width: 400px;
             margin: 100px auto;
-            background: white;
+            background: #2d2d2d;
             padding: 30px;
-            border: 1px solid #ccc;
+            border: 1px solid #444;
         }
 
         .login-container h1 {
-            color: #333;
+            color: #e0e0e0;
             margin-bottom: 20px;
             text-align: center;
             font-size: 24px;
@@ -37,8 +38,10 @@
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid #444;
             font-size: 14px;
+            background: #3a3a3a;
+            color: #e0e0e0;
         }
 
         .login-container button {
@@ -66,6 +69,9 @@
             display: none;
             max-width: 1400px;
             margin: 0 auto;
+            background: #2d2d2d;
+            padding: 30px;
+            border: 1px solid #444;
         }
 
         .header {
@@ -74,11 +80,11 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #ccc;
+            border-bottom: 2px solid #444;
         }
 
         .header h1 {
-            color: #333;
+            color: #e0e0e0;
             font-size: 28px;
         }
 
@@ -98,8 +104,8 @@
         .add-form {
             margin-bottom: 30px;
             padding: 20px;
-            background: #f5f5f5;
-            border: 1px solid #ccc;
+            background: #3a3a3a;
+            border: 1px solid #444;
         }
 
         .add-form input,
@@ -107,8 +113,10 @@
             padding: 8px;
             margin-right: 10px;
             margin-bottom: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #444;
             font-size: 14px;
+            background: #2d2d2d;
+            color: #e0e0e0;
         }
 
         .add-btn {
@@ -127,26 +135,27 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #e8e8e8;
+            background: #3a3a3a;
         }
 
         th {
-            background: #999;
+            background: #555;
             color: white;
             padding: 12px;
             text-align: left;
             font-weight: normal;
-            border: 1px solid #888;
+            border: 1px solid #666;
         }
 
         td {
             padding: 10px 12px;
-            border: 1px solid #ccc;
-            background: #f0f0f0;
+            border: 1px solid #444;
+            background: #2d2d2d;
+            color: #e0e0e0;
         }
 
         tr:nth-child(even) td {
-            background: #e8e8e8;
+            background: #333;
         }
 
         .delete-btn {
@@ -156,10 +165,39 @@
             border: none;
             cursor: pointer;
             font-size: 12px;
+            margin-right: 5px;
         }
 
         .delete-btn:hover {
             background: #555;
+        }
+
+        .edit-btn {
+            padding: 5px 10px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .edit-btn:hover {
+            background: #357abd;
+        }
+
+        .export-btn {
+            padding: 8px 16px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .export-btn:hover {
+            background: #229954;
         }
 
         .loading {
@@ -180,26 +218,28 @@
     <div class="main-container" id="mainContainer">
         <div class="header">
             <h1>Kooperation</h1>
-            <button class="logout-btn" id="logoutBtn">Abmelden</button>
+            <div>
+                <button class="export-btn" id="exportBtn">Export</button>
+                <button class="logout-btn" id="logoutBtn">Abmelden</button>
+            </div>
         </div>
 
         <div class="add-form">
             <input type="text" id="twitchName" placeholder="Twitch-Name" style="width: 200px;">
             <input type="text" id="ingameName" placeholder="Ingame-Name" style="width: 200px;">
-            <select id="mission" style="width: 200px;">
-                <option value="">Mission wählen...</option>
-                <optgroup label="Level Missionen">
-                    <option value="Level 10">Level 10</option>
-                    <option value="Level 17">Level 17</option>
-                    <option value="Level 20">Level 20</option>
-                    <option value="Level 23">Level 23</option>
-                    <option value="Level 25">Level 25</option>
-                </optgroup>
-                <optgroup label="Pack Missionen">
-                    <option value="2$ Pack">2$ Pack</option>
-                    <option value="5$ Pack">5$ Pack</option>
-                    <option value="20$ Pack">20$ Pack</option>
-                </optgroup>
+            <select id="levelMission" style="width: 200px;">
+                <option value="">Level Mission wählen...</option>
+                <option value="Level 10">Level 10</option>
+                <option value="Level 17">Level 17</option>
+                <option value="Level 20">Level 20</option>
+                <option value="Level 23">Level 23</option>
+                <option value="Level 25">Level 25</option>
+            </select>
+            <select id="packMission" style="width: 200px;">
+                <option value="">Pack Mission wählen...</option>
+                <option value="2$ Pack">2$ Pack</option>
+                <option value="5$ Pack">5$ Pack</option>
+                <option value="20$ Pack">20$ Pack</option>
             </select>
             <input type="text" id="reward" placeholder="Belohnung" style="width: 200px;">
             <button class="add-btn" id="addBtn">Eintrag hinzufügen</button>
@@ -225,7 +265,7 @@
     <script>
         const SUPABASE_URL = 'https://zraeikoehgcdqaaqwtot.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYWVpa29laGdjZHFhYXF3dG90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTg0NjksImV4cCI6MjA4NTYzNDQ2OX0.xGL-o0AHO6zAquu_yiSF78frqOtYOwVmvKaU2JF-oKc';
-        const ACCESS_PASSWORD = 'NunoKooperation';
+        const ACCESS_PASSWORD = 'DoomsdayKoop';
 
         let supabaseClient;
         let isLoggedIn = false;
@@ -275,6 +315,7 @@
             
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('addBtn').addEventListener('click', addEntry);
+            document.getElementById('exportBtn').addEventListener('click', exportToText);
         }
 
         async function loadEntries() {
@@ -303,7 +344,10 @@
                             <td>${entry.ingame_name || ''}</td>
                             <td>${entry.mission || ''}</td>
                             <td>${entry.reward || ''}</td>
-                            <td><button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button></td>
+                            <td>
+                                <button class="edit-btn" onclick="editEntry('${entry.id}', '${entry.twitch_name}', '${entry.ingame_name}', '${entry.mission}', '${entry.reward}')">Edit</button>
+                                <button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button>
+                            </td>
                         `;
                     });
                 }
@@ -316,12 +360,23 @@
         async function addEntry() {
             const twitchName = document.getElementById('twitchName').value.trim();
             const ingameName = document.getElementById('ingameName').value.trim();
-            const mission = document.getElementById('mission').value;
+            const levelMission = document.getElementById('levelMission').value;
+            const packMission = document.getElementById('packMission').value;
             const reward = document.getElementById('reward').value.trim();
 
-            if (!twitchName || !ingameName || !mission || !reward) {
-                alert('Bitte alle Felder ausfüllen!');
+            if (!twitchName || !ingameName || (!levelMission && !packMission) || !reward) {
+                alert('Bitte fülle Twitch-Name, Ingame-Name, mindestens eine Mission und Belohnung aus!');
                 return;
+            }
+
+            // Combine missions
+            let missionText = '';
+            if (levelMission && packMission) {
+                missionText = levelMission + ', ' + packMission;
+            } else if (levelMission) {
+                missionText = levelMission;
+            } else {
+                missionText = packMission;
             }
 
             try {
@@ -331,7 +386,7 @@
                         {
                             twitch_name: twitchName,
                             ingame_name: ingameName,
-                            mission: mission,
+                            mission: missionText,
                             reward: reward
                         }
                     ]);
@@ -340,13 +395,106 @@
 
                 document.getElementById('twitchName').value = '';
                 document.getElementById('ingameName').value = '';
-                document.getElementById('mission').value = '';
+                document.getElementById('levelMission').value = '';
+                document.getElementById('packMission').value = '';
                 document.getElementById('reward').value = '';
 
                 loadEntries();
             } catch (error) {
                 alert('Fehler beim Hinzufügen: ' + error.message);
                 console.error('Add error:', error);
+            }
+        }
+
+        async function editEntry(id, twitchName, ingameName, mission, reward) {
+            const newTwitchName = prompt('Twitch-Name:', twitchName);
+            if (newTwitchName === null) return;
+            
+            const newIngameName = prompt('Ingame-Name:', ingameName);
+            if (newIngameName === null) return;
+            
+            const newMission = prompt('Mission:', mission);
+            if (newMission === null) return;
+            
+            const newReward = prompt('Belohnung:', reward);
+            if (newReward === null) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('missions')
+                    .update({
+                        twitch_name: newTwitchName,
+                        ingame_name: newIngameName,
+                        mission: newMission,
+                        reward: newReward
+                    })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                loadEntries();
+            } catch (error) {
+                alert('Fehler beim Bearbeiten: ' + error.message);
+                console.error('Edit error:', error);
+            }
+        }
+
+        async function exportToText() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('missions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    alert('Keine Daten zum Exportieren!');
+                    return;
+                }
+
+                // Find max lengths for alignment
+                let maxTwitch = 'Twitch-Name'.length;
+                let maxIngame = 'Ingame-Name'.length;
+                let maxMission = 'Mission'.length;
+                let maxReward = 'Belohnung'.length;
+
+                data.forEach(entry => {
+                    if (entry.twitch_name && entry.twitch_name.length > maxTwitch) maxTwitch = entry.twitch_name.length;
+                    if (entry.ingame_name && entry.ingame_name.length > maxIngame) maxIngame = entry.ingame_name.length;
+                    if (entry.mission && entry.mission.length > maxMission) maxMission = entry.mission.length;
+                    if (entry.reward && entry.reward.length > maxReward) maxReward = entry.reward.length;
+                });
+
+                // Build text content
+                let textContent = '';
+                textContent += 'Twitch-Name'.padEnd(maxTwitch + 4) + 
+                               'Ingame-Name'.padEnd(maxIngame + 4) + 
+                               'Mission'.padEnd(maxMission + 4) + 
+                               'Belohnung\n';
+                textContent += '='.repeat(maxTwitch + maxIngame + maxMission + maxReward + 16) + '\n\n';
+
+                data.forEach(entry => {
+                    textContent += (entry.twitch_name || '').padEnd(maxTwitch + 4) + 
+                                   (entry.ingame_name || '').padEnd(maxIngame + 4) + 
+                                   (entry.mission || '').padEnd(maxMission + 4) + 
+                                   (entry.reward || '') + '\n';
+                });
+
+                // Download file
+                const blob = new Blob([textContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'kooperation_export.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                alert('Fehler beim Exportieren: ' + error.message);
+                console.error('Export error:', error);
             }
         }
 
