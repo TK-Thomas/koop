@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kooperation</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #ffffff;
+            padding: 20px;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border: 1px solid #ccc;
+        }
+
+        .login-container h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background: #666;
+            color: white;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .login-container button:hover {
+            background: #555;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .main-container {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #666;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: #555;
+        }
+
+        .add-form {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+
+        .add-form input,
+        .add-form select {
+            padding: 8px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .add-btn {
+            padding: 8px 16px;
+            background: #666;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .add-btn:hover {
+            background: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #e8e8e8;
+        }
+
+        th {
+            background: #999;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: normal;
+            border: 1px solid #888;
+        }
+
+        td {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            background: #f0f0f0;
+        }
+
+        tr:nth-child(even) td {
+            background: #e8e8e8;
+        }
+
+        .delete-btn {
+            padding: 5px 10px;
+            background: #666;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #555;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginContainer">
+        <h1>Kooperation</h1>
+        <input type="password" id="passwordInput" placeholder="Passwort eingeben" autocomplete="off">
+        <button onclick="login()">Anmelden</button>
+        <div class="error" id="loginError"></div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="main-container" id="mainContainer">
+        <div class="header">
+            <h1>Kooperation</h1>
+            <button class="logout-btn" onclick="logout()">Abmelden</button>
+        </div>
+
+        <div class="add-form">
+            <input type="text" id="twitchName" placeholder="Twitch-Name" style="width: 200px;">
+            <input type="text" id="ingameName" placeholder="Ingame-Name" style="width: 200px;">
+            <select id="mission" style="width: 200px;">
+                <option value="">Mission wählen...</option>
+                <optgroup label="Level Missionen">
+                    <option value="Level 10">Level 10</option>
+                    <option value="Level 17">Level 17</option>
+                    <option value="Level 20">Level 20</option>
+                    <option value="Level 23">Level 23</option>
+                    <option value="Level 25">Level 25</option>
+                </optgroup>
+                <optgroup label="Pack Missionen">
+                    <option value="2$ Pack">2$ Pack</option>
+                    <option value="5$ Pack">5$ Pack</option>
+                    <option value="20$ Pack">20$ Pack</option>
+                </optgroup>
+            </select>
+            <input type="text" id="reward" placeholder="Belohnung" style="width: 200px;">
+            <button class="add-btn" onclick="addEntry()">Eintrag hinzufügen</button>
+        </div>
+
+        <div class="loading" id="loading">Lade Daten...</div>
+
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Twitch-Name</th>
+                    <th>Ingame-Name</th>
+                    <th>Mission</th>
+                    <th>Belohnung</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // HIER DEINE SUPABASE CREDENTIALS EINFÜGEN
+        const SUPABASE_URL = 'https://zraeikoehgcdqaaqwtot.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYWVpa29laGdjZHFhYXF3dG90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTg0NjksImV4cCI6MjA4NTYzNDQ2OX0.xGL-o0AHO6zAquu_yiSF78frqOtYOwVmvKaU2JF-oKc';
+        
+        // Das Passwort für den Zugang (ÄNDERE DIES!)
+        const ACCESS_PASSWORD = 'NunoKooperation';
+
+        let supabase;
+        let isLoggedIn = false;
+
+        // Check if already logged in
+        if (sessionStorage.getItem('loggedIn') === 'true') {
+            showMainApp();
+        }
+
+        function login() {
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (password === ACCESS_PASSWORD) {
+                sessionStorage.setItem('loggedIn', 'true');
+                errorDiv.textContent = '';
+                showMainApp();
+            } else {
+                errorDiv.textContent = 'Falsches Passwort!';
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('loggedIn');
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+            isLoggedIn = false;
+        }
+
+        function showMainApp() {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            isLoggedIn = true;
+            initSupabase();
+        }
+
+        function initSupabase() {
+            if (SUPABASE_URL === 'DEINE_SUPABASE_URL') {
+                alert('Bitte Supabase Credentials in der index.html einfügen!');
+                return;
+            }
+
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            loadEntries();
+        }
+
+        async function loadEntries() {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('dataTable');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('missions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                loading.style.display = 'none';
+                table.style.display = 'table';
+                
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                data.forEach(entry => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${entry.twitch_name}</td>
+                        <td>${entry.ingame_name}</td>
+                        <td>${entry.mission}</td>
+                        <td>${entry.reward}</td>
+                        <td><button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button></td>
+                    `;
+                });
+            } catch (error) {
+                loading.textContent = 'Fehler beim Laden: ' + error.message;
+            }
+        }
+
+        async function addEntry() {
+            const twitchName = document.getElementById('twitchName').value.trim();
+            const ingameName = document.getElementById('ingameName').value.trim();
+            const mission = document.getElementById('mission').value;
+            const reward = document.getElementById('reward').value.trim();
+
+            if (!twitchName || !ingameName || !mission || !reward) {
+                alert('Bitte alle Felder ausfüllen!');
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('missions')
+                    .insert([
+                        {
+                            twitch_name: twitchName,
+                            ingame_name: ingameName,
+                            mission: mission,
+                            reward: reward
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                // Clear form
+                document.getElementById('twitchName').value = '';
+                document.getElementById('ingameName').value = '';
+                document.getElementById('mission').value = '';
+                document.getElementById('reward').value = '';
+
+                loadEntries();
+            } catch (error) {
+                alert('Fehler beim Hinzufügen: ' + error.message);
+            }
+        }
+
+        async function deleteEntry(id) {
+            if (!confirm('Eintrag wirklich löschen?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('missions')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                loadEntries();
+            } catch (error) {
+                alert('Fehler beim Löschen: ' + error.message);
+            }
+        }
+
+        // Enter key support for login
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>
