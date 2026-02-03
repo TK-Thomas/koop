@@ -170,19 +170,17 @@
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
     <div class="login-container" id="loginContainer">
         <h1>Kooperation</h1>
         <input type="password" id="passwordInput" placeholder="Passwort eingeben" autocomplete="off">
-        <button onclick="login()">Anmelden</button>
+        <button id="loginBtn">Anmelden</button>
         <div class="error" id="loginError"></div>
     </div>
 
-    <!-- Main Application -->
     <div class="main-container" id="mainContainer">
         <div class="header">
             <h1>Kooperation</h1>
-            <button class="logout-btn" onclick="logout()">Abmelden</button>
+            <button class="logout-btn" id="logoutBtn">Abmelden</button>
         </div>
 
         <div class="add-form">
@@ -204,7 +202,7 @@
                 </optgroup>
             </select>
             <input type="text" id="reward" placeholder="Belohnung" style="width: 200px;">
-            <button class="add-btn" onclick="addEntry()">Eintrag hinzufügen</button>
+            <button class="add-btn" id="addBtn">Eintrag hinzufügen</button>
         </div>
 
         <div class="loading" id="loading">Lade Daten...</div>
@@ -225,20 +223,23 @@
     </div>
 
     <script>
-        // HIER DEINE SUPABASE CREDENTIALS EINFÜGEN
         const SUPABASE_URL = 'https://zraeikoehgcdqaaqwtot.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyYWVpa29laGdjZHFhYXF3dG90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTg0NjksImV4cCI6MjA4NTYzNDQ2OX0.xGL-o0AHO6zAquu_yiSF78frqOtYOwVmvKaU2JF-oKc';
-        
-        // Das Passwort für den Zugang (ÄNDERE DIES!)
         const ACCESS_PASSWORD = 'NunoKooperation';
 
-        let supabase;
+        let supabaseClient;
         let isLoggedIn = false;
 
-        // Check if already logged in
         if (sessionStorage.getItem('loggedIn') === 'true') {
             showMainApp();
         }
+
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
 
         function login() {
             const password = document.getElementById('passwordInput').value;
@@ -269,13 +270,11 @@
         }
 
         function initSupabase() {
-            if (SUPABASE_URL === 'DEINE_SUPABASE_URL') {
-                alert('Bitte Supabase Credentials in der index.html einfügen!');
-                return;
-            }
-
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             loadEntries();
+            
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('addBtn').addEventListener('click', addEntry);
         }
 
         async function loadEntries() {
@@ -283,7 +282,7 @@
             const table = document.getElementById('dataTable');
             
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('missions')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -296,18 +295,21 @@
                 const tbody = document.getElementById('tableBody');
                 tbody.innerHTML = '';
 
-                data.forEach(entry => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td>${entry.twitch_name}</td>
-                        <td>${entry.ingame_name}</td>
-                        <td>${entry.mission}</td>
-                        <td>${entry.reward}</td>
-                        <td><button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button></td>
-                    `;
-                });
+                if (data && data.length > 0) {
+                    data.forEach(entry => {
+                        const row = tbody.insertRow();
+                        row.innerHTML = `
+                            <td>${entry.twitch_name || ''}</td>
+                            <td>${entry.ingame_name || ''}</td>
+                            <td>${entry.mission || ''}</td>
+                            <td>${entry.reward || ''}</td>
+                            <td><button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button></td>
+                        `;
+                    });
+                }
             } catch (error) {
                 loading.textContent = 'Fehler beim Laden: ' + error.message;
+                console.error('Load error:', error);
             }
         }
 
@@ -323,7 +325,7 @@
             }
 
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('missions')
                     .insert([
                         {
@@ -336,7 +338,6 @@
 
                 if (error) throw error;
 
-                // Clear form
                 document.getElementById('twitchName').value = '';
                 document.getElementById('ingameName').value = '';
                 document.getElementById('mission').value = '';
@@ -345,6 +346,7 @@
                 loadEntries();
             } catch (error) {
                 alert('Fehler beim Hinzufügen: ' + error.message);
+                console.error('Add error:', error);
             }
         }
 
@@ -352,7 +354,7 @@
             if (!confirm('Eintrag wirklich löschen?')) return;
 
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('missions')
                     .delete()
                     .eq('id', id);
@@ -362,15 +364,9 @@
                 loadEntries();
             } catch (error) {
                 alert('Fehler beim Löschen: ' + error.message);
+                console.error('Delete error:', error);
             }
         }
-
-        // Enter key support for login
-        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
-        });
     </script>
 </body>
 </html>
