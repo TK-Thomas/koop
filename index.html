@@ -302,6 +302,16 @@
         .cancel-btn:hover {
             background: #555;
         }
+
+        .ticket-ja {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .ticket-nein {
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -339,6 +349,10 @@
                 <option value="20$ Pack">20$ Pack</option>
             </select>
             <input type="text" id="reward" placeholder="Belohnung" style="width: 200px;">
+            <select id="ticket" style="width: 150px;">
+                <option value="false">Ticket: Nein</option>
+                <option value="true">Ticket: Ja</option>
+            </select>
             <button class="add-btn" id="addBtn">Eintrag hinzufügen</button>
         </div>
 
@@ -355,6 +369,7 @@
                     <th>Ingame-Name</th>
                     <th>Mission</th>
                     <th>Belohnung</th>
+                    <th>Ticket</th>
                     <th>Aktion</th>
                 </tr>
             </thead>
@@ -385,6 +400,10 @@
                     <option value="20$ Pack">20$ Pack</option>
                 </select>
                 <input type="text" id="editReward" placeholder="Belohnung">
+                <select id="editTicket">
+                    <option value="false">Ticket: Nein</option>
+                    <option value="true">Ticket: Ja</option>
+                </select>
                 <div class="edit-form-buttons">
                     <button class="save-btn" id="saveEditBtn">Speichern</button>
                     <button class="cancel-btn" id="cancelEditBtn">Abbrechen</button>
@@ -409,9 +428,7 @@
 
         document.getElementById('loginBtn').addEventListener('click', login);
         document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
+            if (e.key === 'Enter') login();
         });
 
         function login() {
@@ -445,7 +462,7 @@
         function initSupabase() {
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             loadEntries();
-            
+
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('addBtn').addEventListener('click', addEntry);
             document.getElementById('exportBtn').addEventListener('click', exportToText);
@@ -457,7 +474,7 @@
         async function loadEntries() {
             const loading = document.getElementById('loading');
             const table = document.getElementById('dataTable');
-            
+
             try {
                 const { data, error } = await supabaseClient
                     .from('missions')
@@ -468,7 +485,7 @@
 
                 loading.style.display = 'none';
                 table.style.display = 'table';
-                
+
                 allData = data || [];
                 renderTable(allData);
             } catch (error) {
@@ -484,26 +501,31 @@
             if (data && data.length > 0) {
                 data.forEach(entry => {
                     const row = tbody.insertRow();
+                    const ticketLabel = entry.ticket
+                        ? '<span class="ticket-ja">✅ Ja</span>'
+                        : '<span class="ticket-nein">❌ Nein</span>';
+
                     row.innerHTML = `
                         <td>${entry.twitch_name || ''}</td>
                         <td>${entry.ingame_name || ''}</td>
                         <td>${entry.mission || ''}</td>
                         <td>${entry.reward || ''}</td>
+                        <td>${ticketLabel}</td>
                         <td>
-                            <button class="edit-btn" onclick="editEntry('${entry.id}', '${entry.twitch_name}', '${entry.ingame_name}', '${entry.mission}', '${entry.reward}')">Edit</button>
+                            <button class="edit-btn" onclick="editEntry('${entry.id}', '${(entry.twitch_name || '').replace(/'/g, "\\'")}', '${(entry.ingame_name || '').replace(/'/g, "\\'")}', '${(entry.mission || '').replace(/'/g, "\\'")}', '${(entry.reward || '').replace(/'/g, "\\'")}', ${entry.ticket ? 'true' : 'false'})">Edit</button>
                             <button class="delete-btn" onclick="deleteEntry('${entry.id}')">Löschen</button>
                         </td>
                     `;
                 });
             } else {
                 const row = tbody.insertRow();
-                row.innerHTML = '<td colspan="5" style="text-align: center; color: #888;">Keine Einträge gefunden</td>';
+                row.innerHTML = '<td colspan="6" style="text-align: center; color: #888;">Keine Einträge gefunden</td>';
             }
         }
 
         function filterTable() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
+
             if (!searchTerm) {
                 renderTable(allData);
                 return;
@@ -514,10 +536,10 @@
                 const ingameName = (entry.ingame_name || '').toLowerCase();
                 const mission = (entry.mission || '').toLowerCase();
                 const reward = (entry.reward || '').toLowerCase();
-                
-                return twitchName.includes(searchTerm) || 
-                       ingameName.includes(searchTerm) || 
-                       mission.includes(searchTerm) || 
+
+                return twitchName.includes(searchTerm) ||
+                       ingameName.includes(searchTerm) ||
+                       mission.includes(searchTerm) ||
                        reward.includes(searchTerm);
             });
 
@@ -530,13 +552,13 @@
             const levelMission = document.getElementById('levelMission').value;
             const packMission = document.getElementById('packMission').value;
             const reward = document.getElementById('reward').value.trim();
+            const ticket = document.getElementById('ticket').value === 'true';
 
             if (!twitchName || !ingameName || (!levelMission && !packMission) || !reward) {
                 alert('Bitte fülle Twitch-Name, Ingame-Name, mindestens eine Mission und Belohnung aus!');
                 return;
             }
 
-            // Combine missions
             let missionText = '';
             if (levelMission && packMission) {
                 missionText = levelMission + ', ' + packMission;
@@ -549,14 +571,13 @@
             try {
                 const { error } = await supabaseClient
                     .from('missions')
-                    .insert([
-                        {
-                            twitch_name: twitchName,
-                            ingame_name: ingameName,
-                            mission: missionText,
-                            reward: reward
-                        }
-                    ]);
+                    .insert([{
+                        twitch_name: twitchName,
+                        ingame_name: ingameName,
+                        mission: missionText,
+                        reward: reward,
+                        ticket: ticket
+                    }]);
 
                 if (error) throw error;
 
@@ -565,6 +586,7 @@
                 document.getElementById('levelMission').value = '';
                 document.getElementById('packMission').value = '';
                 document.getElementById('reward').value = '';
+                document.getElementById('ticket').value = 'false';
 
                 loadEntries();
             } catch (error) {
@@ -573,17 +595,18 @@
             }
         }
 
-        function editEntry(id, twitchName, ingameName, mission, reward) {
+        function editEntry(id, twitchName, ingameName, mission, reward, ticket) {
             currentEditId = id;
-            
-            // Fill the form
+
             document.getElementById('editTwitchName').value = twitchName || '';
             document.getElementById('editIngameName').value = ingameName || '';
             document.getElementById('editReward').value = reward || '';
-            
-            // Parse mission string to separate level and pack missions
+            document.getElementById('editTicket').value = ticket ? 'true' : 'false';
+
             if (mission) {
                 const missions = mission.split(', ');
+                document.getElementById('editLevelMission').value = '';
+                document.getElementById('editPackMission').value = '';
                 missions.forEach(m => {
                     if (m.includes('Level')) {
                         document.getElementById('editLevelMission').value = m;
@@ -595,8 +618,7 @@
                 document.getElementById('editLevelMission').value = '';
                 document.getElementById('editPackMission').value = '';
             }
-            
-            // Show modal
+
             document.getElementById('editModal').style.display = 'block';
         }
 
@@ -613,13 +635,13 @@
             const levelMission = document.getElementById('editLevelMission').value;
             const packMission = document.getElementById('editPackMission').value;
             const reward = document.getElementById('editReward').value.trim();
+            const ticket = document.getElementById('editTicket').value === 'true';
 
             if (!twitchName || !ingameName || (!levelMission && !packMission) || !reward) {
                 alert('Bitte fülle Twitch-Name, Ingame-Name, mindestens eine Mission und Belohnung aus!');
                 return;
             }
 
-            // Combine missions
             let missionText = '';
             if (levelMission && packMission) {
                 missionText = levelMission + ', ' + packMission;
@@ -636,7 +658,8 @@
                         twitch_name: twitchName,
                         ingame_name: ingameName,
                         mission: missionText,
-                        reward: reward
+                        reward: reward,
+                        ticket: ticket
                     })
                     .eq('id', currentEditId);
 
@@ -664,7 +687,6 @@
                     return;
                 }
 
-                // Find max lengths for alignment
                 let maxTwitch = 'Twitch-Name'.length;
                 let maxIngame = 'Ingame-Name'.length;
                 let maxMission = 'Mission'.length;
@@ -677,22 +699,22 @@
                     if (entry.reward && entry.reward.length > maxReward) maxReward = entry.reward.length;
                 });
 
-                // Build text content
                 let textContent = '';
-                textContent += 'Twitch-Name'.padEnd(maxTwitch + 4) + 
-                               'Ingame-Name'.padEnd(maxIngame + 4) + 
-                               'Mission'.padEnd(maxMission + 4) + 
-                               'Belohnung\n';
-                textContent += '='.repeat(maxTwitch + maxIngame + maxMission + maxReward + 16) + '\n\n';
+                textContent += 'Twitch-Name'.padEnd(maxTwitch + 4) +
+                               'Ingame-Name'.padEnd(maxIngame + 4) +
+                               'Mission'.padEnd(maxMission + 4) +
+                               'Belohnung'.padEnd(maxReward + 4) +
+                               'Ticket\n';
+                textContent += '='.repeat(maxTwitch + maxIngame + maxMission + maxReward + 30) + '\n\n';
 
                 data.forEach(entry => {
-                    textContent += (entry.twitch_name || '').padEnd(maxTwitch + 4) + 
-                                   (entry.ingame_name || '').padEnd(maxIngame + 4) + 
-                                   (entry.mission || '').padEnd(maxMission + 4) + 
-                                   (entry.reward || '') + '\n';
+                    textContent += (entry.twitch_name || '').padEnd(maxTwitch + 4) +
+                                   (entry.ingame_name || '').padEnd(maxIngame + 4) +
+                                   (entry.mission || '').padEnd(maxMission + 4) +
+                                   (entry.reward || '').padEnd(maxReward + 4) +
+                                   (entry.ticket ? 'Ja' : 'Nein') + '\n';
                 });
 
-                // Download file
                 const blob = new Blob([textContent], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
